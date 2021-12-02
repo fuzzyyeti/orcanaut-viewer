@@ -25,7 +25,7 @@ const mintListSet = new Set();
 MintList.map(m => mintListSet.add(m));
 
 
-type TraitInfo = {
+type NftInfo = {
     traits: Trait[]
     image: string
     name: string
@@ -37,7 +37,7 @@ type Trait =
     value: string
 }
 
-const TraitDisplay = (props: TraitInfo) => {
+const TraitDisplay = (props: NftInfo) => {
    let i = 0;
     return(
         <div>
@@ -51,8 +51,8 @@ const TraitDisplay = (props: TraitInfo) => {
 const TokenDisplay: FC = props => {
     const {publicKey} = useWallet();
     const { connection } = useConnection();
-    const initVal: TraitInfo = [{name: 'null', image: 'null', traits: []}];
-    const [traits, setTraits] = useState(initVal);
+    const initVal: NftInfo[] = [{name: 'null', image: 'null', traits: []}];
+    const [nfts, setNfts] = useState(initVal);
 
     const onConnect = useCallback(async () =>
     {
@@ -67,20 +67,20 @@ const TokenDisplay: FC = props => {
             .map(m => axios.get(`https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/${m}`)
                 .then(r => {
                     console.log(r.data.results);
-                    setTraits([...traits, {name: r.data.results["title"], image: r.data.results["img"],traits: r.data.results["attributes"]}]);
+                    setNfts([{name: r.data.results["title"], image: r.data.results["img"],traits: r.data.results["attributes"]}]);
                 }));
     }, [connection, publicKey]);
     return (
         <div>
             <h1 hidden={publicKey != null}>Connect your wallet to see your Orcanauts</h1>
-            <h1 hidden={traits.traits.length > 0 || !publicKey}>Click button to see your Orcanauts</h1>
-            <h1 hidden={traits.traits.length === 0 || !publicKey}>Here are your Orcanauts</h1>
-            {traitsList.map(traits => (
-              <TraitDisplay 
-                traits={traits.traits} 
-                image={traits.image} 
-                name={traits.name}>
-              </TraitDisplay>
+            <h1 hidden={nfts.length > 0 || !publicKey}>Click button to see your Orcanauts</h1>
+            <h1 hidden={nfts.length === 0 || !publicKey}>Here are your Orcanauts</h1>
+            {nfts.map(trait => (
+              <TraitDisplay
+                traits={trait.traits}
+                image={trait.image}
+                name={trait.name}
+              />
             ))}
             <button className={"wallet-adapter-button"}  onClick={onConnect} disabled={!publicKey}>Get Orcanauts</button>
         </div>
