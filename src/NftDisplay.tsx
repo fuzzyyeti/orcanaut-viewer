@@ -51,30 +51,37 @@ const TraitDisplay = (props: TraitInfo) => {
 const TokenDisplay: FC = props => {
     const {publicKey} = useWallet();
     const { connection } = useConnection();
-    const initVal: TraitInfo = {name: 'null', image: 'null', traits: []};
+    const initVal: TraitInfo = [{name: 'null', image: 'null', traits: []}];
     const [traits, setTraits] = useState(initVal);
 
     const onConnect = useCallback(async () =>
     {
+        console.log("button clicked");
         if (publicKey == null) return;
         const mintAddresses = await connection.getParsedTokenAccountsByOwner(
             publicKey,
             {programId : new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")},
             "confirmed")
             .then(accounts => accounts.value.map(a => a.account.data.parsed.info.mint));
-        mintAddresses.filter(m => mintListSet.has(m.toString()))
-            .map(m => axios.get(`https://api-devnet.magiceden.io/rpc/getNFTByMintAddress/${m}`)
+        mintAddresses.filter(m => {console.log(m); return mintListSet.has(m.toString())})
+            .map(m => axios.get(`https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/${m}`)
                 .then(r => {
                     console.log(r.data.results);
-                    setTraits({name: r.data.results["title"], image: r.data.results["img"],traits: r.data.results["attributes"]});
+                    setTraits([...traits, {name: r.data.results["title"], image: r.data.results["img"],traits: r.data.results["attributes"]}]);
                 }));
     }, [connection, publicKey]);
     return (
         <div>
             <h1 hidden={publicKey != null}>Connect your wallet to see your Orcanauts</h1>
             <h1 hidden={traits.traits.length > 0 || !publicKey}>Click button to see your Orcanauts</h1>
-            <h1 hidden={traits.traits.length == 0 || !publicKey}>Here are your Orcanauts</h1>
-            <TraitDisplay traits={traits.traits} image={traits.image} name={traits.name}></TraitDisplay>
+            <h1 hidden={traits.traits.length === 0 || !publicKey}>Here are your Orcanauts</h1>
+            {traitsList.map(traits => (
+              <TraitDisplay 
+                traits={traits.traits} 
+                image={traits.image} 
+                name={traits.name}>
+              </TraitDisplay>
+            ))}
             <button className={"wallet-adapter-button"}  onClick={onConnect} disabled={!publicKey}>Get Orcanauts</button>
         </div>
     );
@@ -82,7 +89,7 @@ const TokenDisplay: FC = props => {
 
 export const NftDisplay: FC = () => {
     // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
-    const network = WalletAdapterNetwork.Devnet;
+    const network = WalletAdapterNetwork.Mainnet;
     // You can also provide a custom RPC endpoint
     const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
