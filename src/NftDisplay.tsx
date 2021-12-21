@@ -17,6 +17,30 @@ import {
     WalletMultiButton
 } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl, PublicKey } from '@solana/web3.js';
+import {
+    getParsedNftAccountsByOwner,
+    getParsedAccountByMint
+} from "@nfteyez/sol-rayz";
+
+const GUPPY = "guppyrZyEX9iTPSu92pi8T71Zka7xd6PrsTJrXRW6u1";
+const CLOWNFISH = "cLownTTaiiQMoyMmFjfmSGowi8HyNhCtTLFcrNKnqX6";
+const PORPOISE = "porpKs9ZZERXKkg55f1GRXCiXZK89Uz6VKS8Bv9qWqM";
+const ADDRESS_WITH_LOTS_OF_TOKENS = "MNsTzWHjYx4ihWb5X7NPxwUzp3gntH8EFM6SsApvwPS";
+const ADDRESS_WITH_KILLER_WHALE = "DyDdJM9KVsvosfXbcHDp4pRpmbMHkRq3pcarBykPy4ir";
+const STARFISH = "star2pH7rVWscs743JGdCAL8Lc9nyJeqx7YQXkGUnWf";
+const HALLOWHALE = "ha11o7FUziqRqpWLSnHoAnNjpeMYg6S3sSd7hfbqLyk";
+const WHALE = "whaLeHav12EhGK19u6kKbLRwC9E1EATGnm6MWbBCcUW";
+const KILLERWHALE = "kLwhLkZRt6CadPHRBsgfhRCKXX426WMBnhoGozTduvk";
+
+const mapTokenAccounts = new Map();
+mapTokenAccounts.set(GUPPY, 'Guppy');
+mapTokenAccounts.set(CLOWNFISH, 'Clownfish',);
+mapTokenAccounts.set(PORPOISE, 'Porpoise');
+mapTokenAccounts.set(STARFISH, 'Starfish');
+mapTokenAccounts.set(HALLOWHALE, 'Hallowhale');
+mapTokenAccounts.set(WHALE, 'Whale');
+mapTokenAccounts.set(KILLERWHALE, 'Killer Whale');
+
 
 // Default styles that can be overridden by your app
 require('@solana/wallet-adapter-react-ui/styles.css');
@@ -57,31 +81,41 @@ const TokenDisplay: FC = props => {
     const onConnect = useCallback(async () =>
     {
         if (publicKey == null) return;
-        const mintAddresses = await connection.getParsedTokenAccountsByOwner(
-            publicKey,
+        const parsedAccounts = await getParsedAccountByMint({mintAddress: GUPPY});
+        console.log(parsedAccounts);
+        const mintAddresses = await connection.getParsedTokenAccountsByOwner( new PublicKey(ADDRESS_WITH_LOTS_OF_TOKENS),
             {programId : new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")},
-            "confirmed")
-            .then(accounts => accounts.value.map(a => a.account.data.parsed.info.mint));
-        mintAddresses.filter(m => mintListSet.has(m.toString()))
-            .map(m => axios.get(`https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/${m}`)
-                .then(r => {
-                    setNfts(nfts => [...nfts, {name: r.data.results['title'], image: r.data.results['img'],traits: r.data.results['attributes']}]);
-                }));
-    }, [connection, publicKey, setNfts]);
+            "confirmed");
+        const collectibles = mintAddresses.value.filter(ma => mapTokenAccounts.has(ma.account.data.parsed.info.mint)).
+            map(ma => mapTokenAccounts.get(ma.account.data.parsed.info.mint) + ' ' + ma.account.data.parsed.info.tokenAmount.amount);
+
+        console.log('collectibles', collectibles);
+        //     publicKey,
+        //     {programId : new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")},
+        //     "confirmed")
+        //     .then(accounts => accounts.value.map(a => a.account.data.parsed.info.mint));
+        // mintAddresses.filter(m => mintListSet.has(m.toString()))
+        //     .map(m => axios.get(`https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/${m}`)
+        //         .then(r => {
+        //             setNfts(nfts => [...nfts, {name: r.data.results['title'], image: r.data.results['img'],traits: r.data.results['attributes']}]);
+        //         }));
+       // const spls = await getParsedNftAccountsByOwner({publicAddress : ADDRESS_WITH_LOTS_OF_TOKENS});
+       // console.log(spls);
+    }, [publicKey]);
         let i = 0;  
     return (
         <div>
-            <h1 hidden={publicKey != null}>Connect your wallet to see your Orcanauts</h1>
-            <h1 hidden={nfts.length > 0 || !publicKey}>Click button to see your Orcanauts</h1>
-            <h1 hidden={nfts.length === 0 || !publicKey}>Here are your Orcanauts</h1>
-            {nfts.map(nft => (
-              <TraitDisplay
-                key={i++}
-                traits={nft.traits}
-                image={nft.image}
-                name={nft.name}
-              />
-            ))}
+            {/*<h1 hidden={publicKey != null}>Connect your wallet to see your Orcanauts</h1>*/}
+            {/*<h1 hidden={nfts.length > 0 || !publicKey}>Click button to see your Orcanauts</h1>*/}
+            {/*<h1 hidden={nfts.length === 0 || !publicKey}>Here are your Orcanauts</h1>*/}
+            {/*{nfts.map(nft => (*/}
+            {/*  <TraitDisplay*/}
+            {/*    key={i++}*/}
+            {/*    traits={nft.traits}*/}
+            {/*    image={nft.image}*/}
+            {/*    name={nft.name}*/}
+            {/*  />*/}
+            {/*))}*/}
             <button className={"wallet-adapter-button"}  onClick={onConnect} disabled={!publicKey}>Get Orcanauts</button>
         </div>
     );
