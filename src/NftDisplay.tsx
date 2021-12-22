@@ -2,6 +2,13 @@ import React, {FC, useMemo, useCallback, useState} from 'react';
 import {ConnectionProvider, useWallet, WalletProvider, useConnection } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import MintList from './mints_BPbS1AC4KW5SBiz8M2AgPtWXTzR1ekBwMLLQLcwdvZnE.json'
+import hallowWhale from './collectible-assets/hallowhale.svg';
+import porpoise from './collectible-assets/porpoise.svg';
+import killerWhale from './collectible-assets/killer-whale.svg';
+import starfish from './collectible-assets/starfish.svg';
+import whale from './collectible-assets/whale.svg';
+import clownfish from './collectible-assets/clownfish.svg';
+import guppy from './collectible-assets/guppy.svg';
 import axios from 'axios';
 import {
     getLedgerWallet,
@@ -26,20 +33,21 @@ const GUPPY = "guppyrZyEX9iTPSu92pi8T71Zka7xd6PrsTJrXRW6u1";
 const CLOWNFISH = "cLownTTaiiQMoyMmFjfmSGowi8HyNhCtTLFcrNKnqX6";
 const PORPOISE = "porpKs9ZZERXKkg55f1GRXCiXZK89Uz6VKS8Bv9qWqM";
 const ADDRESS_WITH_LOTS_OF_TOKENS = "MNsTzWHjYx4ihWb5X7NPxwUzp3gntH8EFM6SsApvwPS";
-const ADDRESS_WITH_KILLER_WHALE = "DyDdJM9KVsvosfXbcHDp4pRpmbMHkRq3pcarBykPy4ir";
+//const ADDRESS_WITH_KILLER_WHALE = "DyDdJM9KVsvosfXbcHDp4pRpmbMHkRq3pcarBykPy4ir";
+const ADDRESS_WITH_KILLER_WHALE = "4HZgK1cKRZSYZ4yzCiyBhD8frEVtmQH5x1qBwgiz6oJu";
 const STARFISH = "star2pH7rVWscs743JGdCAL8Lc9nyJeqx7YQXkGUnWf";
 const HALLOWHALE = "ha11o7FUziqRqpWLSnHoAnNjpeMYg6S3sSd7hfbqLyk";
 const WHALE = "whaLeHav12EhGK19u6kKbLRwC9E1EATGnm6MWbBCcUW";
 const KILLERWHALE = "kLwhLkZRt6CadPHRBsgfhRCKXX426WMBnhoGozTduvk";
 
 const mapTokenAccounts = new Map();
-mapTokenAccounts.set(GUPPY, 'Guppy');
-mapTokenAccounts.set(CLOWNFISH, 'Clownfish',);
-mapTokenAccounts.set(PORPOISE, 'Porpoise');
-mapTokenAccounts.set(STARFISH, 'Starfish');
-mapTokenAccounts.set(HALLOWHALE, 'Hallowhale');
-mapTokenAccounts.set(WHALE, 'Whale');
-mapTokenAccounts.set(KILLERWHALE, 'Killer Whale');
+mapTokenAccounts.set(GUPPY, guppy);
+mapTokenAccounts.set(CLOWNFISH, clownfish,);
+mapTokenAccounts.set(PORPOISE, porpoise);
+mapTokenAccounts.set(STARFISH, starfish);
+mapTokenAccounts.set(HALLOWHALE, hallowWhale);
+mapTokenAccounts.set(WHALE, whale);
+mapTokenAccounts.set(KILLERWHALE, killerWhale);
 
 
 // Default styles that can be overridden by your app
@@ -76,20 +84,21 @@ const TokenDisplay: FC = props => {
     const {publicKey} = useWallet();
     const { connection } = useConnection();
     const initVal: NftInfo[] = [];
-    const [nfts, setNfts] = useState(initVal);
+    const [collectiblesImg, setCollectiblesImg] = useState([]);
 
     const onConnect = useCallback(async () =>
     {
         if (publicKey == null) return;
         const parsedAccounts = await getParsedAccountByMint({mintAddress: GUPPY});
         console.log(parsedAccounts);
-        const mintAddresses = await connection.getParsedTokenAccountsByOwner( new PublicKey(ADDRESS_WITH_LOTS_OF_TOKENS),
+        const mintAddresses = await connection.getParsedTokenAccountsByOwner( new PublicKey(ADDRESS_WITH_KILLER_WHALE),
             {programId : new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")},
             "confirmed");
         const collectibles = mintAddresses.value.filter(ma => mapTokenAccounts.has(ma.account.data.parsed.info.mint)).
-            map(ma => mapTokenAccounts.get(ma.account.data.parsed.info.mint) + ' ' + ma.account.data.parsed.info.tokenAmount.amount);
+            map(ma => [mapTokenAccounts.get(ma.account.data.parsed.info.mint),
+             parseInt(ma.account.data.parsed.info.tokenAmount.amount)/parseInt(ma.account.data.parsed.info.tokenAmount.decimals));
 
-        console.log('collectibles', collectibles);
+
         //     publicKey,
         //     {programId : new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")},
         //     "confirmed")
@@ -105,6 +114,7 @@ const TokenDisplay: FC = props => {
         let i = 0;  
     return (
         <div>
+            <img width={500} src={hallowWhale}/>
             {/*<h1 hidden={publicKey != null}>Connect your wallet to see your Orcanauts</h1>*/}
             {/*<h1 hidden={nfts.length > 0 || !publicKey}>Click button to see your Orcanauts</h1>*/}
             {/*<h1 hidden={nfts.length === 0 || !publicKey}>Here are your Orcanauts</h1>*/}
