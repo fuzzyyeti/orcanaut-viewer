@@ -1,0 +1,8 @@
+.sideBySide {
+    float: left;
+    padding: 40px;
+}
+
+.stopSideBySide {
+    clear: both;
+}

@@ -10,6 +10,7 @@ import whale from './collectible-assets/whale.svg';
 import clownfish from './collectible-assets/clownfish.svg';
 import guppy from './collectible-assets/guppy.svg';
 import axios from 'axios';
+import classes from './NftDisplay.module.css';
 import {
     getLedgerWallet,
     getPhantomWallet,
@@ -53,9 +54,10 @@ mapTokenAccounts.set(KILLERWHALE, killerWhale);
 // Default styles that can be overridden by your app
 require('@solana/wallet-adapter-react-ui/styles.css');
 
-const mintListSet = new Set();
-MintList.map(m => mintListSet.add(m));
-
+interface TokenData {
+    image: any,
+    amount: number
+}
 
 type NftInfo = {
     traits: Trait[]
@@ -80,53 +82,43 @@ const TraitDisplay = (props: NftInfo) => {
     );
 }
 
+const calcAmount = (value : number, decimals : number) => {
+    if(decimals === 0) {
+        return value;
+    }
+    return value/(10 ** decimals);
+}
+
 const TokenDisplay: FC = props => {
     const {publicKey} = useWallet();
     const { connection } = useConnection();
-    const initVal: NftInfo[] = [];
-    const [collectiblesImg, setCollectiblesImg] = useState([]);
+    const [collectiblesImg, setCollectiblesImg] = useState(new Array<TokenData>());
 
     const onConnect = useCallback(async () =>
     {
         if (publicKey == null) return;
         const parsedAccounts = await getParsedAccountByMint({mintAddress: GUPPY});
         console.log(parsedAccounts);
-        const mintAddresses = await connection.getParsedTokenAccountsByOwner( new PublicKey(ADDRESS_WITH_KILLER_WHALE),
+        const mintAddresses = await connection.getParsedTokenAccountsByOwner( new PublicKey(ADDRESS_WITH_LOTS_OF_TOKENS),
             {programId : new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")},
             "confirmed");
+        console.log(mintAddresses);
         const collectibles = mintAddresses.value.filter(ma => mapTokenAccounts.has(ma.account.data.parsed.info.mint)).
-            map(ma => [mapTokenAccounts.get(ma.account.data.parsed.info.mint),
-             parseInt(ma.account.data.parsed.info.tokenAmount.amount)/parseInt(ma.account.data.parsed.info.tokenAmount.decimals));
-
-
-        //     publicKey,
-        //     {programId : new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")},
-        //     "confirmed")
-        //     .then(accounts => accounts.value.map(a => a.account.data.parsed.info.mint));
-        // mintAddresses.filter(m => mintListSet.has(m.toString()))
-        //     .map(m => axios.get(`https://api-mainnet.magiceden.io/rpc/getNFTByMintAddress/${m}`)
-        //         .then(r => {
-        //             setNfts(nfts => [...nfts, {name: r.data.results['title'], image: r.data.results['img'],traits: r.data.results['attributes']}]);
-        //         }));
-       // const spls = await getParsedNftAccountsByOwner({publicAddress : ADDRESS_WITH_LOTS_OF_TOKENS});
-       // console.log(spls);
+            map(ma => setCollectiblesImg(prev => [...prev, { image: mapTokenAccounts.get(ma.account.data.parsed.info.mint), amount:
+             calcAmount(parseInt(ma.account.data.parsed.info.tokenAmount.amount),parseInt(ma.account.data.parsed.info.tokenAmount.decimals))}]));
     }, [publicKey]);
         let i = 0;  
     return (
         <div>
-            <img width={500} src={hallowWhale}/>
-            {/*<h1 hidden={publicKey != null}>Connect your wallet to see your Orcanauts</h1>*/}
-            {/*<h1 hidden={nfts.length > 0 || !publicKey}>Click button to see your Orcanauts</h1>*/}
-            {/*<h1 hidden={nfts.length === 0 || !publicKey}>Here are your Orcanauts</h1>*/}
-            {/*{nfts.map(nft => (*/}
-            {/*  <TraitDisplay*/}
-            {/*    key={i++}*/}
-            {/*    traits={nft.traits}*/}
-            {/*    image={nft.image}*/}
-            {/*    name={nft.name}*/}
-            {/*  />*/}
-            {/*))}*/}
-            <button className={"wallet-adapter-button"}  onClick={onConnect} disabled={!publicKey}>Get Orcanauts</button>
+            {collectiblesImg.map(td => (
+                <div className={classes.sideBySide}>
+                <img width={100} src={td.image}/>
+                <p>Amount: {td.amount}</p>
+                </div>
+            ))}
+            <div className={classes.stopSideBySide}>
+                <button className={"wallet-adapter-button"}  onClick={onConnect} disabled={!publicKey}>Get Orcanauts</button>
+            </div>
         </div>
     );
 }
@@ -156,7 +148,7 @@ export const NftDisplay: FC = () => {
             <WalletProvider wallets={wallets} autoConnect>
                 <WalletModalProvider>
                     <TokenDisplay/>
-                    <WalletMultiButton />
+                    <WalletMultiButton/>
                 </WalletModalProvider>
             </WalletProvider>
         </ConnectionProvider>
