@@ -6,3 +6,7 @@
 .stopSideBySide {
     clear: both;
 }
+
+.selectPopUp {
+    background-color: purple;
+}

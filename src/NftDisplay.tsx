@@ -1,4 +1,4 @@
-import React, {FC, useMemo, useCallback, useState} from 'react';
+import React, {FC, useMemo, useCallback, useState, useEffect} from 'react';
 import {ConnectionProvider, useWallet, WalletProvider, useConnection } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import MintList from './mints_BPbS1AC4KW5SBiz8M2AgPtWXTzR1ekBwMLLQLcwdvZnE.json'
@@ -11,6 +11,7 @@ import clownfish from './collectible-assets/clownfish.svg';
 import guppy from './collectible-assets/guppy.svg';
 import axios from 'axios';
 import classes from './NftDisplay.module.css';
+import { makeStyles } from "@material-ui/core/styles";
 import {
     getLedgerWallet,
     getPhantomWallet,
@@ -29,12 +30,15 @@ import {
     getParsedNftAccountsByOwner,
     getParsedAccountByMint
 } from "@nfteyez/sol-rayz";
+import Select from '@mui/material/Select';
+import FormControl from '@mui/material/FormControl'
+import {MenuItem} from "@mui/material";
 
 const GUPPY = "guppyrZyEX9iTPSu92pi8T71Zka7xd6PrsTJrXRW6u1";
 const CLOWNFISH = "cLownTTaiiQMoyMmFjfmSGowi8HyNhCtTLFcrNKnqX6";
 const PORPOISE = "porpKs9ZZERXKkg55f1GRXCiXZK89Uz6VKS8Bv9qWqM";
 const ADDRESS_WITH_LOTS_OF_TOKENS = "MNsTzWHjYx4ihWb5X7NPxwUzp3gntH8EFM6SsApvwPS";
-//const ADDRESS_WITH_KILLER_WHALE = "DyDdJM9KVsvosfXbcHDp4pRpmbMHkRq3pcarBykPy4ir";
+const ANOTHER_ADDRESS_WITH_TOKENS = "DyDdJM9KVsvosfXbcHDp4pRpmbMHkRq3pcarBykPy4ir";
 const ADDRESS_WITH_KILLER_WHALE = "4HZgK1cKRZSYZ4yzCiyBhD8frEVtmQH5x1qBwgiz6oJu";
 const STARFISH = "star2pH7rVWscs743JGdCAL8Lc9nyJeqx7YQXkGUnWf";
 const HALLOWHALE = "ha11o7FUziqRqpWLSnHoAnNjpeMYg6S3sSd7hfbqLyk";
@@ -59,29 +63,6 @@ interface TokenData {
     amount: number
 }
 
-type NftInfo = {
-    traits: Trait[]
-    image: string
-    name: string
-}
-
-type Trait =
-{
-    trait_type: string;
-    value: string
-}
-
-const TraitDisplay = (props: NftInfo) => {
-   let i = 0;
-    return(
-        <div>
-            <h2 hidden={props.name === 'null'}>{props.name}</h2>
-            {props.traits.map(t => <li key={i++}>{t.trait_type} = {t.value}</li>)}
-            <img hidden={props.image === 'null'} src={props.image} className="nft-image" alt="nft"/>
-        </div>
-    );
-}
-
 const calcAmount = (value : number, decimals : number) => {
     if(decimals === 0) {
         return value;
@@ -93,44 +74,74 @@ const TokenDisplay: FC = props => {
     const {publicKey} = useWallet();
     const { connection } = useConnection();
     const [collectiblesImg, setCollectiblesImg] = useState(new Array<TokenData>());
+    const [collectibleHolder, setCollectibleHolder] = useState(ADDRESS_WITH_LOTS_OF_TOKENS);
+    const handleChangeWallet = (e : any) => {
+        setCollectiblesImg(new Array<TokenData>());
+        console.log("selected key", e.target.value)
+        setCollectibleHolder(e.target.value);
+        console.log("updated state", collectibleHolder);
+    }
+    useEffect(() => {
+        onConnect();
+
+        }
+    , [collectibleHolder]);
 
     const onConnect = useCallback(async () =>
     {
-        if (publicKey == null) return;
-        const parsedAccounts = await getParsedAccountByMint({mintAddress: GUPPY});
-        console.log(parsedAccounts);
-        const mintAddresses = await connection.getParsedTokenAccountsByOwner( new PublicKey(ADDRESS_WITH_LOTS_OF_TOKENS),
+        console.log('key to retrieve', collectibleHolder);
+        const mintAddresses = await connection.getParsedTokenAccountsByOwner( new PublicKey(collectibleHolder),
             {programId : new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")},
             "confirmed");
         console.log(mintAddresses);
         const collectibles = mintAddresses.value.filter(ma => mapTokenAccounts.has(ma.account.data.parsed.info.mint)).
             map(ma => setCollectiblesImg(prev => [...prev, { image: mapTokenAccounts.get(ma.account.data.parsed.info.mint), amount:
              calcAmount(parseInt(ma.account.data.parsed.info.tokenAmount.amount),parseInt(ma.account.data.parsed.info.tokenAmount.decimals))}]));
-    }, [publicKey]);
+    }, [collectibleHolder]);
         let i = 0;  
     return (
         <div>
+            <form>
+                <FormControl>
+                    <Select
+                        MenuProps={{
+                            sx: {
+                                '& .MuiMenu-list': {
+                                backgroundColor: '#404144',
+                                    color: 'white'
+                                }
+                            }
+                        }}
+                        sx={{
+                            backgroundColor: '#404144',
+                            color: 'white',
+                            fontFamily: "'Inter', 'Roboto', 'Helvetica Neue', 'Helvetica, Arial, sans-serif'",
+                            borderRadius: '6px'
+                        }}
+                        onChange={handleChangeWallet}
+                        defaultValue={ADDRESS_WITH_LOTS_OF_TOKENS}
+                    >
+                    <MenuItem value={ADDRESS_WITH_LOTS_OF_TOKENS}>Wallet 0</MenuItem>
+                    <MenuItem value={ADDRESS_WITH_KILLER_WHALE}>Wallet 1</MenuItem>
+                        <MenuItem value={ANOTHER_ADDRESS_WITH_TOKENS}>Wallet 2</MenuItem>
+                        {publicKey && (<MenuItem value={publicKey.toBase58()}>Your Address</MenuItem>)}
+                </Select>
+                </FormControl>
+            </form>
             {collectiblesImg.map(td => (
                 <div className={classes.sideBySide}>
                 <img width={100} src={td.image}/>
                 <p>Amount: {td.amount}</p>
                 </div>
             ))}
-            <div className={classes.stopSideBySide}>
-                <button className={"wallet-adapter-button"}  onClick={onConnect} disabled={!publicKey}>Get Orcanauts</button>
-            </div>
         </div>
     );
 }
 
 export const NftDisplay: FC = () => {
-    // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
     const network = WalletAdapterNetwork.Mainnet;
-    // You can also provide a custom RPC endpoint
     const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
-    // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking --
-    // Only the wallets you configure here will be compiled into your application
     const wallets = useMemo(() => [
         getPhantomWallet(),
         getSlopeWallet(),
